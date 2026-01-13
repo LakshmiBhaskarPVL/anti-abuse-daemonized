@@ -28,7 +28,7 @@ fileCreated = false
 [DETECTION]
 # Multiple watchdog paths can be monitored simultaneously
 watchdogPath = [
-    "/var/lib/pterodactyl/volumes",
+    # "/var/lib/pterodactyl/volumes",
     # "/var/www/html",
     # "/root/.ssh"
 ]
@@ -38,7 +38,7 @@ watchdogIgnoreFile = ["main.go", "config.toml"]
 maxFileSizeMB = 500  # Allow up to 500MB files
 
 [INTEGRATION.AI]
-enabled = true
+enabled = false
 generate_models = ["llama-3.3-70b-versatile", "llama-3.3-70b-specdec"]
 generate_endpoint = "http://localhost:11434/api/generate"
 use_groq = false
@@ -51,6 +51,7 @@ webhook_url = "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOK
 truncate_text = true
 
 [PLUGINS.PterodactylAutoSuspend]
+enabled = false
 hostname = "https://panel.example.com"
 api_key = "ptla_"
 `
@@ -94,6 +95,7 @@ type Config struct {
 
 	Plugins struct {
 		PterodactylAutoSuspend struct {
+			Enabled  bool   `toml:"enabled"`
 			Hostname string `toml:"hostname"`
 			APIKey   string `toml:"api_key"`
 		} `toml:"PterodactylAutoSuspend"`

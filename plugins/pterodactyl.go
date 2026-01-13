@@ -31,6 +31,18 @@ func (p *PterodactylAutoSuspend) Version() string {
 
 func (p *PterodactylAutoSuspend) OnStart(cfg *config.Config) error {
 	p.cfg = cfg
+	
+	// Check if plugin is enabled and configured
+	if !cfg.Plugins.PterodactylAutoSuspend.Enabled {
+		logger.Log.Debug("Pterodactyl Auto Suspend plugin disabled")
+		return nil
+	}
+	
+	if cfg.Plugins.PterodactylAutoSuspend.Hostname == "" || cfg.Plugins.PterodactylAutoSuspend.APIKey == "" {
+		logger.Log.Warn("Pterodactyl Auto Suspend plugin enabled but missing configuration (hostname/api_key)")
+		return nil
+	}
+	
 	logger.Log.Info("Pterodactyl Auto Suspend plugin started")
 	return nil
 }

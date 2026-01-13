@@ -38,7 +38,7 @@ type FileEvent struct {
 func NewWatcher(cfg *config.Config, scan *scanner.Scanner) (*Watcher, error) {
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create file system watcher: %w", err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -98,6 +98,10 @@ func getSystemMemoryGB() int {
 }
 
 func (w *Watcher) Start() error {
+	if w.watcher == nil {
+		return fmt.Errorf("watcher not initialized")
+	}
+
 	// Add watch paths
 	for _, path := range w.config.Detection.WatchdogPath {
 		if err := w.addWatchRecursive(path); err != nil {
@@ -129,10 +133,16 @@ func (w *Watcher) Stop() {
 func (w *Watcher) addWatchRecursive(root string) error {
 	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			logger.Log.WithError(err).Debugf("Error accessing path: %s", path)
+			return nil // Continue walking despite errors
 		}
 		if info.IsDir() && !w.shouldIgnore(path) {
-			return w.watcher.Add(path)
+			if err := w.watcher.Add(path); err != nil {
+				logger.Log.WithError(err).Warnf("Failed to watch directory: %s", path)
+				// Don't return error - continue trying other directories
+			} else {
+				logger.Log.Debugf("Watching directory: %s", path)
+			}
 		}
 		return nil
 	})
