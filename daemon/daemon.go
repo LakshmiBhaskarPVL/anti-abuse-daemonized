@@ -65,7 +65,9 @@ func StopDaemon() error {
 }
 
 func RestartDaemon(binaryPath, configPath, logLevel string) error {
-	StopDaemon()
+	if err := StopDaemon(); err != nil {
+		return err
+	}
 	return StartDaemon(binaryPath, configPath, logLevel)
 }
 
