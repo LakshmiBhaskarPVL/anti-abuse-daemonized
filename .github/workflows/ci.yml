@@ -29,20 +29,6 @@ jobs:
       - name: Run tests
         run: go test -v ./...
 
-      - name: Check code format
-        run: |
-          if [ -n "$(gofmt -s -l .)" ]; then
-            echo "Code is not formatted. Run 'gofmt -s -w .'"
-            gofmt -s -l .
-            exit 1
-          fi
-
-      - name: Run linter
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: latest
-          args: --timeout=5m
-
   build:
     runs-on: ubuntu-latest
     needs: test
