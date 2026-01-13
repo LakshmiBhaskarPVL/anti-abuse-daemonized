@@ -1,0 +1,86 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libyara-dev
+
+      - name: Build Linux amd64
+        env:
+          GOOS: linux
+          GOARCH: amd64
+          CGO_ENABLED: 1
+          CGO_LDFLAGS: "-L/usr/lib"
+        run: |
+          go build -ldflags="-s -w" -o dist/sentinel .
+
+      - name: Create checksum
+        run: |
+          cd dist
+          sha256sum sentinel > ../sentinel.sha256
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/sentinel
+            sentinel.sha256
+          body: |
+            ## Installation
+
+            ```bash
+            # Download binary
+            curl -L -o /usr/local/bin/sentinel https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/sentinel
+
+            # Make executable
+            sudo chmod +x /usr/local/bin/sentinel
+
+            # Setup directories
+            sudo mkdir -p /etc/sentinel/signatures
+            sudo mkdir -p /var/run/sentinel
+            sudo mkdir -p /var/log/sentinel
+
+            # Copy YARA signatures
+            sudo cp -r signatures/* /etc/sentinel/signatures/
+
+            # Copy systemd service
+            sudo cp sentinel.service /etc/systemd/system/
+
+            # Enable and start (creates config automatically on first run)
+            sudo systemctl daemon-reload
+            sudo systemctl enable sentinel
+            sudo systemctl start sentinel
+
+            # Edit config if needed
+            sudo nano /etc/sentinel/config.toml
+
+            # View logs
+            sudo journalctl -u sentinel -f
+            ```
+
+            ## Verify Checksum
+
+            ```bash
+            sha256sum -c sentinel.sha256
+            ```
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

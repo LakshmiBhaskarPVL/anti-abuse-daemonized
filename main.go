@@ -77,8 +77,8 @@ func runForeground() {
 
 	logger.Log.WithFields(map[string]interface{}{
 		"version": cfg.Version,
-		"company": cfg.Company,
-	}).Infof("starting %s daemon", cfg.AppName)
+		"company": config.Company,
+	}).Infof("starting %s daemon", config.AppName)
 
 	// Initialize plugins
 	if err := plugins.InitPlugins(cfg); err != nil {
@@ -123,7 +123,7 @@ func runForeground() {
 
 func runDaemon() {
 	// Daemon mode - redirect logs to file
-	logFile := "anti-abuse.log"
+	logFile := "/var/log/sentinel/sentinel.log"
 	if err := logger.SetLogFile(logFile); err != nil {
 		logger.Log.WithError(err).Fatal("Failed to set log file")
 	}

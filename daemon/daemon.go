@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	PidFile = "anti-abuse.pid"
-	LogFile = "anti-abuse.log"
+	PidFile = "/var/run/sentinel/sentinel.pid"
+	LogFile = "/var/log/sentinel/sentinel.log"
 )
 
 func StartDaemon(binaryPath, configPath, logLevel string) error {

@@ -275,7 +275,7 @@ func (w *Watcher) processFile(event FileEvent) {
 					Inline: true,
 				})
 			}
-			if err := integrations.SendDiscordWebhook(w.config, "⚠️ Abuse Detection Alert", event.Path, fields, aiAnalysis); err != nil {
+			if err := integrations.SendDiscordWebhook(w.config, w.config.MachineID, "⚠️ Abuse Detection Alert", event.Path, fields, aiAnalysis); err != nil {
 				logger.Log.WithError(err).Warnf("Discord webhook failed for %s", event.Path)
 			}
 		}

@@ -30,10 +30,18 @@ type DiscordField struct {
 	Inline bool   `json:"inline,omitempty"`
 }
 
-func SendDiscordWebhook(cfg *config.Config, title, description string, fields []DiscordField, aiAnalysis string) error {
+func SendDiscordWebhook(cfg *config.Config, machineID, title, description string, fields []DiscordField, aiAnalysis string) error {
 	if !cfg.Integration.Discord.Enabled {
 		return nil
 	}
+
+	// Prepend machine ID to fields so it's immediately visible
+	machineField := DiscordField{
+		Name:   "Machine ID",
+		Value:  machineID,
+		Inline: true,
+	}
+	fields = append([]DiscordField{machineField}, fields...)
 
 	embed := DiscordEmbed{
 		Title:       title,

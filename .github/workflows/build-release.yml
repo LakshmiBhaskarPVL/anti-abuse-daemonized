@@ -1,0 +1,140 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libyara-dev
+
+      - name: Run tests
+        run: go test -v ./...
+
+      - name: Run linter
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --timeout=5m
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libyara-dev
+
+      - name: Build Linux amd64
+        env:
+          GOOS: linux
+          GOARCH: amd64
+          CGO_ENABLED: 1
+          CGO_LDFLAGS: "-L/usr/lib"
+        run: |
+          go build -ldflags="-s -w" -o sentinel .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: sentinel-linux-amd64
+          path: sentinel
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+
+      - name: Create checksum
+        run: |
+          cd sentinel-linux-amd64
+          sha256sum sentinel > ../sentinel.sha256
+          cd ..
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            sentinel-linux-amd64/sentinel
+            sentinel.sha256
+          body: |
+            ## Installation
+
+            ```bash
+            # Download binary
+            curl -L -o /usr/local/bin/sentinel https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/sentinel
+
+            # Make executable
+            sudo chmod +x /usr/local/bin/sentinel
+
+            # Setup directories
+            sudo mkdir -p /etc/sentinel/signatures
+            sudo mkdir -p /var/run/sentinel
+            sudo mkdir -p /var/log/sentinel
+
+            # Copy YARA signatures
+            sudo cp -r signatures/* /etc/sentinel/signatures/
+
+            # Copy systemd service
+            sudo cp sentinel.service /etc/systemd/system/
+
+            # Enable and start (creates config automatically on first run)
+            sudo systemctl daemon-reload
+            sudo systemctl enable sentinel
+            sudo systemctl start sentinel
+
+            # Edit config if needed
+            sudo nano /etc/sentinel/config.toml
+
+            # View logs
+            sudo journalctl -u sentinel -f
+            ```
+
+            ## Verify Checksum
+
+            ```bash
+            sha256sum -c sentinel.sha256
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    needs: release
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') && always()
+    steps:
+      - name: Release Status
+        run: |
+          if [ "${{ needs.release.result }}" == "success" ]; then
+            echo "✅ Release ${{ github.ref_name }} completed successfully!"
+          else
+            echo "❌ Release ${{ github.ref_name }} failed"
+            exit 1
+          fi
