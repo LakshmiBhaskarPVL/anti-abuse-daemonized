@@ -87,7 +87,7 @@ jobs:
 
             ```bash
             # Download binary
-            curl -L -o /usr/local/bin/sentinel https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/sentinel
+            curl -L -o /usr/local/bin/sentinel https://github.com/${{ github.repository }}/releases/latest/download/sentinel
 
             # Make executable
             sudo chmod +x /usr/local/bin/sentinel
