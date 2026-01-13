@@ -55,11 +55,13 @@ func (p *PterodactylAutoSuspend) OnScan(path string, content []byte, eventType s
 	return nil
 }
 
+var uuidRegex = regexp.MustCompile(`^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$`)
+
 func (p *PterodactylAutoSuspend) extractUUID(path string) string {
 	// Extract UUID from path like /var/lib/pterodactyl/volumes/uuid/...
 	parts := strings.Split(path, string(filepath.Separator))
 	for i, part := range parts {
-		if matched, _ := regexp.MatchString(`^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$`, part); matched {
+		if uuidRegex.MatchString(part) {
 			if i+1 < len(parts) {
 				return part
 			}

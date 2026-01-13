@@ -36,7 +36,7 @@ func StartDaemon(binaryPath, configPath, logLevel string) error {
 	// Write PID
 	pidFile := getPidFile()
 	if err := os.WriteFile(pidFile, []byte(strconv.Itoa(cmd.Process.Pid)), 0644); err != nil {
-		cmd.Process.Kill()
+		_ = cmd.Process.Kill()
 		return err
 	}
 
@@ -59,7 +59,7 @@ func StopDaemon() error {
 		return err
 	}
 
-	os.Remove(getPidFile())
+	_ = os.Remove(getPidFile())
 	logger.Log.Info("Daemon stopped")
 	return nil
 }
