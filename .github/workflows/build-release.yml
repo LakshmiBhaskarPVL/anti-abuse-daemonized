@@ -93,23 +93,63 @@ jobs:
             sudo mkdir -p /etc/sentinel/signatures
             sudo mkdir -p /var/run/sentinel
             sudo mkdir -p /var/log/sentinel
+            sudo chown -R root:root /etc/sentinel /var/run/sentinel /var/log/sentinel
+            ```
 
-            # Copy YARA signatures
-            sudo cp -r signatures/* /etc/sentinel/signatures/
+            ### 2. Create systemd service
 
-            # Copy systemd service
-            sudo cp sentinel.service /etc/systemd/system/
+            ```bash
+            sudo tee /etc/systemd/system/sentinel.service > /dev/null <<'EOF'
+            [Unit]
+            Description=Sentinel - Advanced Abuse Detection by Novel
+            Documentation=https://github.com/${{ github.repository }}
+            After=network.target
 
-            # Enable and start (creates config automatically on first run)
+            [Service]
+            Type=simple
+            User=root
+            WorkingDirectory=/etc/sentinel
+            ExecStart=/usr/local/bin/sentinel --daemon --log-level info
+            ExecStop=/usr/local/bin/sentinel --action stop
+            Restart=always
+            RestartSec=5
+            StandardOutput=journal
+            StandardError=journal
+            SyslogIdentifier=sentinel
+            TimeoutStopSec=10
+            KillMode=mixed
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+            ```
+
+            ### 3. Add YARA signatures (optional)
+
+            Place any `.yara` or `.yar` files in `/etc/sentinel/signatures/`. On first startup, Sentinel will auto-create the config if it doesn't exist.
+
+            ```bash
+            # Example: Add a signature file
+            sudo cp your-rules.yara /etc/sentinel/signatures/
+            ```
+
+            ### 4. Enable and start
+
+            ```bash
             sudo systemctl daemon-reload
             sudo systemctl enable sentinel
             sudo systemctl start sentinel
 
-            # Edit config if needed
-            sudo nano /etc/sentinel/config.toml
-
             # View logs
             sudo journalctl -u sentinel -f
+            ```
+
+            ### 5. Configure
+
+            Sentinel auto-generates `/etc/sentinel/config.toml` on first run. Configure it with your preferred settings
+
+            ```bash
+            sudo nano /etc/sentinel/config.toml
             ```
 
             ## Verify Checksum
