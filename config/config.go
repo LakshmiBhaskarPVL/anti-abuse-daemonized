@@ -69,21 +69,21 @@ type Config struct {
 	} `toml:"LOGS"`
 
 	Detection struct {
-		WatchdogPath     []string `toml:"watchdogPath"`
-		SignaturePath    string   `toml:"SignaturePath"`
+		WatchdogPath       []string `toml:"watchdogPath"`
+		SignaturePath      string   `toml:"SignaturePath"`
 		WatchdogIgnorePath []string `toml:"watchdogIgnorePath"`
 		WatchdogIgnoreFile []string `toml:"watchdogIgnoreFile"`
-		MaxFileSizeMB    int      `toml:"maxFileSizeMB"` // Optional, default 100MB
+		MaxFileSizeMB      int      `toml:"maxFileSizeMB"` // Optional, default 100MB
 	} `toml:"DETECTION"`
 
 	Integration struct {
 		AI struct {
-			Enabled        bool     `toml:"enabled"`
-			GenerateModels []string `toml:"generate_models"`
-			GenerateEndpoint string `toml:"generate_endpoint"`
-			UseGroq        bool     `toml:"use_groq"`
-			GroqAPIKey     string   `toml:"groq_api_token"`
-			Prompt         string   `toml:"prompt"`
+			Enabled          bool     `toml:"enabled"`
+			GenerateModels   []string `toml:"generate_models"`
+			GenerateEndpoint string   `toml:"generate_endpoint"`
+			UseGroq          bool     `toml:"use_groq"`
+			GroqAPIKey       string   `toml:"groq_api_token"`
+			Prompt           string   `toml:"prompt"`
 		} `toml:"AI"`
 		Discord struct {
 			Enabled      bool   `toml:"enabled"`

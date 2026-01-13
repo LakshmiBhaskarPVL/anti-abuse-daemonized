@@ -17,11 +17,11 @@ type DiscordWebhook struct {
 }
 
 type DiscordEmbed struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Color       int    `json:"color"`
+	Title       string         `json:"title"`
+	Description string         `json:"description"`
+	Color       int            `json:"color"`
 	Fields      []DiscordField `json:"fields"`
-	Timestamp   string `json:"timestamp"`
+	Timestamp   string         `json:"timestamp"`
 }
 
 type DiscordField struct {

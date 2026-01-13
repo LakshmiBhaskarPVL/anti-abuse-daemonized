@@ -11,7 +11,7 @@ var Log *logrus.Logger
 func init() {
 	Log = logrus.New()
 	Log.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp: true,
+		FullTimestamp:   true,
 		TimestampFormat: "15:04",
 	})
 	Log.SetOutput(os.Stdout)

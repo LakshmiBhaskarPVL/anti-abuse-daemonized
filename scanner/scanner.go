@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hillu/go-yara/v4"
 	"anti-abuse-go/logger"
+	"github.com/hillu/go-yara/v4"
 )
 
 // Match represents a YARA match

@@ -9,12 +9,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"anti-abuse-go/config"
 	"anti-abuse-go/integrations"
 	"anti-abuse-go/logger"
 	"anti-abuse-go/plugins"
 	"anti-abuse-go/scanner"
+	"github.com/fsnotify/fsnotify"
 )
 
 type Watcher struct {
@@ -252,7 +252,7 @@ func (w *Watcher) processFile(event FileEvent) {
 
 	if len(matches) > 0 {
 		logger.Log.WithField("matches", len(matches)).Infof("Flagged: %s", event.Path)
-		
+
 		// Trigger AI analysis if enabled
 		var aiAnalysis string
 		if w.config.Integration.AI.Enabled {
@@ -264,7 +264,7 @@ func (w *Watcher) processFile(event FileEvent) {
 				aiAnalysis = analysis.Content
 			}
 		}
-		
+
 		// Send Discord webhook if enabled
 		if w.config.Integration.Discord.Enabled {
 			fields := make([]integrations.DiscordField, 0)
@@ -279,7 +279,7 @@ func (w *Watcher) processFile(event FileEvent) {
 				logger.Log.WithError(err).Warnf("Discord webhook failed for %s", event.Path)
 			}
 		}
-		
+
 		// Trigger plugins
 		for _, plugin := range plugins.GetPlugins() {
 			if err := plugin.OnDetected(event.Path, matches); err != nil {
