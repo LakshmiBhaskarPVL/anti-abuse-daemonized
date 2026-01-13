@@ -78,6 +78,7 @@ jobs:
           files: |
             sentinel-linux-amd64/sentinel
             sentinel.sha256
+          draft: true
           body: |
             ## Installation
 
@@ -122,7 +123,7 @@ jobs:
   notify:
     needs: release
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') && always()
+    if: startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Release Status
         run: |
