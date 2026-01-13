@@ -11,12 +11,6 @@ type Config struct {
 	AppName   string `toml:"app_name"`
 	MachineID string `toml:"machineID"`
 
-	Language struct {
-		English struct {
-			NovelStarted string `toml:"novelStarted"`
-		} `toml:"english"`
-	} `toml:"LANGUGAE"`
-
 	Logs struct {
 		ProcessStartMsg bool `toml:"processStartMsg"`
 		FlaggedNoti     bool `toml:"flaggedNoti"`
@@ -54,7 +48,6 @@ type Config struct {
 		PterodactylAutoSuspend struct {
 			Hostname string `toml:"hostname"`
 			APIKey   string `toml:"api_key"`
-			Path     string `toml:"path"`
 		} `toml:"PterodactylAutoSuspend"`
 	} `toml:"PLUGINS"`
 }

@@ -3,9 +3,6 @@ company = "Novel"
 app_name = "Sentinel"
 machineID = "server1"
 
-[LANGUGAE.english]
-novelStarted = "Anti-Abuse Go Started within - {}s."
-
 [LOGS]
 processStartMsg = true
 flaggedNoti = true
@@ -15,7 +12,12 @@ fileMoved = false
 fileCreated = false
 
 [DETECTION]
-watchdogPath = ["/var/lib/pterodactyl/volumes"]
+# Multiple watchdog paths can be monitored simultaneously
+watchdogPath = [
+    "/var/lib/pterodactyl/volumes",
+    # "/var/www/html",
+    # "/root/.ssh"
+]
 SignaturePath = "/etc/sentinel/signatures"
 watchdogIgnorePath = ["/etc/sentinel/signatures"]
 watchdogIgnoreFile = ["main.go", "config.toml"]
@@ -37,4 +39,3 @@ truncate_text = true
 [PLUGINS.PterodactylAutoSuspend]
 hostname = "https://panel.example.com"
 api_key = "ptla_"
-path = "/var/lib/pterodactyl/volumes"

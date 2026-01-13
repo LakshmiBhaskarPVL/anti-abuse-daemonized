@@ -41,7 +41,10 @@ func main() {
 
 	switch *action {
 	case "start":
-		binary, _ := os.Executable()
+		binary, err := os.Executable()
+		if err != nil {
+			logger.Log.WithError(err).Fatal("Failed to get executable path")
+		}
 		if err := daemon.StartDaemon(binary, *configPath, *logLevel); err != nil {
 			logger.Log.Fatal(err)
 		}
@@ -50,7 +53,10 @@ func main() {
 			logger.Log.Fatal(err)
 		}
 	case "restart":
-		binary, _ := os.Executable()
+		binary, err := os.Executable()
+		if err != nil {
+			logger.Log.WithError(err).Fatal("Failed to get executable path")
+		}
 		if err := daemon.RestartDaemon(binary, *configPath, *logLevel); err != nil {
 			logger.Log.Fatal(err)
 		}
@@ -105,8 +111,9 @@ func runForeground() {
 	<-sigChan
 	logger.Log.Info("Shutting down...")
 
-	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	_ = shutdownCtx
 
 	// Stop watcher
 	watch.Stop()

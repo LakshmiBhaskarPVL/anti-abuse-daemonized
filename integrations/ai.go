@@ -94,22 +94,39 @@ func callAI(cfg *config.Config, model, content string) (*AIAnalysis, error) {
 	return parseAIResponse(cfg, body)
 }
 
+func extractGroqContent(response map[string]interface{}) (string, error) {
+	choices, ok := response["choices"].([]interface{})
+	if !ok || len(choices) == 0 {
+		return "", fmt.Errorf("no choices in Groq response")
+	}
+	choice, ok := choices[0].(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("invalid choice format")
+	}
+	msg, ok := choice["message"].(map[string]interface{})
+	if !ok {
+		return "", fmt.Errorf("no message in choice")
+	}
+	content, ok := msg["content"].(string)
+	if !ok {
+		return "", fmt.Errorf("no content in message")
+	}
+	return content, nil
+}
+
 func parseAIResponse(cfg *config.Config, body []byte) (*AIAnalysis, error) {
 	var response map[string]interface{}
 	if err := json.Unmarshal(body, &response); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse AI response JSON: %w", err)
 	}
 
 	var content string
 	if cfg.Integration.AI.UseGroq {
-		if choices, ok := response["choices"].([]interface{}); ok && len(choices) > 0 {
-			if choice, ok := choices[0].(map[string]interface{}); ok {
-				if msg, ok := choice["message"].(map[string]interface{}); ok {
-					if c, ok := msg["content"].(string); ok {
-						content = c
-					}
-				}
-			}
+		var err error
+		content, err = extractGroqContent(response)
+		if err != nil {
+			logger.Log.WithError(err).Warnf("Failed to extract Groq response content")
+			content = fmt.Sprintf("Error in AI response: %v", err)
 		}
 	} else {
 		if resp, ok := response["response"].(string); ok {
@@ -118,7 +135,7 @@ func parseAIResponse(cfg *config.Config, body []byte) (*AIAnalysis, error) {
 	}
 
 	if content == "" {
-		return nil, fmt.Errorf("no content in AI response")
+		return &AIAnalysis{Content: "No content in AI response"}, nil
 	}
 
 	// Parse score and reason from response like "**5/10** reason"
@@ -129,7 +146,10 @@ func parseAIResponse(cfg *config.Config, body []byte) (*AIAnalysis, error) {
 
 	scorePart := strings.Trim(parts[1], "/10 ")
 	score := 0
-	fmt.Sscanf(scorePart, "%d", &score)
+	if _, err := fmt.Sscanf(scorePart, "%d", &score); err != nil {
+		logger.Log.WithError(err).Warnf("Failed to parse abuse score from: %s", scorePart)
+		score = 0
+	}
 
 	reason := strings.TrimSpace(parts[2])
 

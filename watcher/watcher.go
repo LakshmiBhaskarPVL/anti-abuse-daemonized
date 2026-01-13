@@ -11,7 +11,9 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 	"anti-abuse-go/config"
+	"anti-abuse-go/integrations"
 	"anti-abuse-go/logger"
+	"anti-abuse-go/plugins"
 	"anti-abuse-go/scanner"
 )
 
@@ -250,7 +252,40 @@ func (w *Watcher) processFile(event FileEvent) {
 
 	if len(matches) > 0 {
 		logger.Log.WithField("matches", len(matches)).Infof("Flagged: %s", event.Path)
-		// TODO: Trigger integrations and plugins
+		
+		// Trigger AI analysis if enabled
+		var aiAnalysis string
+		if w.config.Integration.AI.Enabled {
+			analysis, err := integrations.AnalyzeWithAI(w.config, string(event.Content))
+			if err != nil {
+				logger.Log.WithError(err).Warnf("AI analysis failed for %s", event.Path)
+				aiAnalysis = "AI analysis failed"
+			} else if analysis != nil {
+				aiAnalysis = analysis.Content
+			}
+		}
+		
+		// Send Discord webhook if enabled
+		if w.config.Integration.Discord.Enabled {
+			fields := make([]integrations.DiscordField, 0)
+			for _, match := range matches {
+				fields = append(fields, integrations.DiscordField{
+					Name:   match.Rule,
+					Value:  match.Tags,
+					Inline: true,
+				})
+			}
+			if err := integrations.SendDiscordWebhook(w.config, "⚠️ Abuse Detection Alert", event.Path, fields, aiAnalysis); err != nil {
+				logger.Log.WithError(err).Warnf("Discord webhook failed for %s", event.Path)
+			}
+		}
+		
+		// Trigger plugins
+		for _, plugin := range plugins.GetPlugins() {
+			if err := plugin.OnDetected(event.Path, matches); err != nil {
+				logger.Log.WithError(err).Warnf("Plugin %s failed for %s", plugin.Name(), event.Path)
+			}
+		}
 	} else if w.config.Logs.FileModified || w.config.Logs.FileCreated {
 		logger.Log.Debugf("Processed: %s", event.Path)
 	}

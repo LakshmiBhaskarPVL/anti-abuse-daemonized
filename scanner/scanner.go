@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -51,7 +50,7 @@ func (s *Scanner) loadRules(signaturePath string) error {
 
 	if fileInfo.IsDir() {
 		// Load all .yar and .yara files from directory
-		files, err := ioutil.ReadDir(signaturePath)
+		files, err := os.ReadDir(signaturePath)
 		if err != nil {
 			return fmt.Errorf("failed to read signature directory: %w", err)
 		}
@@ -73,6 +72,10 @@ func (s *Scanner) loadRules(signaturePath string) error {
 		if len(filesToCompile) == 0 {
 			return fmt.Errorf("no valid YARA rules found in directory: %s", signaturePath)
 		}
+
+		if len(filesToCompile) == 0 {
+			return fmt.Errorf("no valid YARA rules found in directory: %s", signaturePath)
+		}
 	} else {
 		// Single file
 		if !(strings.HasSuffix(signaturePath, ".yar") || strings.HasSuffix(signaturePath, ".yara")) {
@@ -87,6 +90,7 @@ func (s *Scanner) loadRules(signaturePath string) error {
 		return fmt.Errorf("failed to create YARA compiler: %w", err)
 	}
 
+	var compiledCount int
 	for _, rulePath := range filesToCompile {
 		file, err := os.Open(rulePath)
 		if err != nil {
@@ -102,6 +106,11 @@ func (s *Scanner) loadRules(signaturePath string) error {
 		}
 
 		logger.Log.Debugf("Added YARA rules from %s", rulePath)
+		compiledCount++
+	}
+
+	if compiledCount == 0 {
+		return fmt.Errorf("failed to compile any YARA rules from %d files", len(filesToCompile))
 	}
 
 	rules, err := compiler.GetRules()
