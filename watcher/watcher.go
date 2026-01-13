@@ -244,6 +244,10 @@ func (w *Watcher) cleanupProcessedFiles() {
 }
 
 func (w *Watcher) readFileContent(path string) ([]byte, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
 	defer file.Close()
 
 	stat, err := file.Stat()
