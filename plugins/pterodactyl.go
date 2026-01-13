@@ -48,6 +48,11 @@ func (p *PterodactylAutoSuspend) OnStart(cfg *config.Config) error {
 }
 
 func (p *PterodactylAutoSuspend) OnDetected(path string, matches interface{}) error {
+	// Double-check plugin is enabled (in case config changed at runtime)
+	if !p.cfg.Plugins.PterodactylAutoSuspend.Enabled {
+		return nil
+	}
+	
 	uuid := p.extractUUID(path)
 	if uuid == "" {
 		return nil

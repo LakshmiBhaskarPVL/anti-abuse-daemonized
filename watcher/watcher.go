@@ -18,15 +18,17 @@ import (
 )
 
 type Watcher struct {
-	watcher    *fsnotify.Watcher
-	scanner    *scanner.Scanner
-	config     *config.Config
-	workChan   chan FileEvent
-	workerPool int
-	bufferSize int
-	ctx        context.Context
-	cancel     context.CancelFunc
-	wg         sync.WaitGroup
+	watcher       *fsnotify.Watcher
+	scanner       *scanner.Scanner
+	config        *config.Config
+	workChan      chan FileEvent
+	workerPool    int
+	bufferSize    int
+	ctx           context.Context
+	cancel        context.CancelFunc
+	wg            sync.WaitGroup
+	processedFiles map[string]time.Time // Deduplication map
+	processedMu   sync.RWMutex         // Mutex for deduplication map
 }
 
 type FileEvent struct {
@@ -47,14 +49,15 @@ func NewWatcher(cfg *config.Config, scan *scanner.Scanner) (*Watcher, error) {
 	workerPool, bufferSize := autoTuneResources()
 
 	watch := &Watcher{
-		watcher:    w,
-		scanner:    scan,
-		config:     cfg,
-		workChan:   make(chan FileEvent, bufferSize),
-		workerPool: workerPool,
-		bufferSize: bufferSize,
-		ctx:        ctx,
-		cancel:     cancel,
+		watcher:        w,
+		scanner:        scan,
+		config:         cfg,
+		workChan:       make(chan FileEvent, bufferSize),
+		workerPool:     workerPool,
+		bufferSize:     bufferSize,
+		ctx:            ctx,
+		cancel:         cancel,
+		processedFiles: make(map[string]time.Time),
 	}
 
 	return watch, nil
@@ -114,6 +117,9 @@ func (w *Watcher) Start() error {
 		w.wg.Add(1)
 		go w.worker(i)
 	}
+
+	// Start deduplication cleanup goroutine
+	go w.cleanupProcessedFiles()
 
 	// Start event loop
 	go w.eventLoop()
@@ -216,11 +222,28 @@ func (w *Watcher) processBatch(events []fsnotify.Event) {
 	}
 }
 
-func (w *Watcher) readFileContent(path string) ([]byte, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
+func (w *Watcher) cleanupProcessedFiles() {
+	ticker := time.NewTicker(60 * time.Second) // Clean up every minute
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			w.processedMu.Lock()
+			now := time.Now()
+			for path, processedTime := range w.processedFiles {
+				if now.Sub(processedTime) > 10*time.Minute { // Remove entries older than 10 minutes
+					delete(w.processedFiles, path)
+				}
+			}
+			w.processedMu.Unlock()
+		case <-w.ctx.Done():
+			return
+		}
 	}
+}
+
+func (w *Watcher) readFileContent(path string) ([]byte, error) {
 	defer file.Close()
 
 	stat, err := file.Stat()
@@ -260,6 +283,17 @@ func (w *Watcher) worker(id int) {
 }
 
 func (w *Watcher) processFile(event FileEvent) {
+	// Deduplication: Skip if file was processed recently (within 5 seconds)
+	w.processedMu.Lock()
+	lastProcessed, exists := w.processedFiles[event.Path]
+	if exists && time.Since(lastProcessed) < 5*time.Second {
+		w.processedMu.Unlock()
+		logger.Log.Debugf("Skipping duplicate detection for %s", event.Path)
+		return
+	}
+	w.processedFiles[event.Path] = time.Now()
+	w.processedMu.Unlock()
+
 	matches, err := w.scanner.Scan(event.Content, event.Path)
 	if err != nil {
 		logger.Log.WithError(err).Debugf("Scan failed for %s", event.Path)
