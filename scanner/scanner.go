@@ -43,7 +43,10 @@ func (s *Scanner) loadRules(signaturePath string) error {
 	// Check if path is a file or directory
 	fileInfo, err := os.Stat(signaturePath)
 	if err != nil {
-		return fmt.Errorf("failed to access signature path: %w", err)
+		logger.Log.Warnf("Signature path not found: %s - no YARA rules will be applied", signaturePath)
+		// Return empty scanner instead of error - allow first-time startup
+		s.rules = make([]*yara.Rules, 0)
+		return nil
 	}
 
 	var filesToCompile []string
@@ -52,7 +55,9 @@ func (s *Scanner) loadRules(signaturePath string) error {
 		// Load all .yar and .yara files from directory
 		files, err := os.ReadDir(signaturePath)
 		if err != nil {
-			return fmt.Errorf("failed to read signature directory: %w", err)
+			logger.Log.Warnf("Failed to read signature directory %s: %v - no YARA rules will be applied", signaturePath, err)
+			s.rules = make([]*yara.Rules, 0)
+			return nil
 		}
 
 		for _, file := range files {
@@ -70,11 +75,9 @@ func (s *Scanner) loadRules(signaturePath string) error {
 		}
 
 		if len(filesToCompile) == 0 {
-			return fmt.Errorf("no valid YARA rules found in directory: %s", signaturePath)
-		}
-
-		if len(filesToCompile) == 0 {
-			return fmt.Errorf("no valid YARA rules found in directory: %s", signaturePath)
+			logger.Log.Warnf("No YARA rules found in directory %s - scanner will not detect anything", signaturePath)
+			s.rules = make([]*yara.Rules, 0)
+			return nil
 		}
 	} else {
 		// Single file
@@ -110,7 +113,9 @@ func (s *Scanner) loadRules(signaturePath string) error {
 	}
 
 	if compiledCount == 0 {
-		return fmt.Errorf("failed to compile any YARA rules from %d files", len(filesToCompile))
+		logger.Log.Warnf("Failed to compile any YARA rules from %d files - scanner will not detect anything", len(filesToCompile))
+		s.rules = make([]*yara.Rules, 0)
+		return nil
 	}
 
 	rules, err := compiler.GetRules()

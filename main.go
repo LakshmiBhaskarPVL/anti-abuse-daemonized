@@ -75,10 +75,7 @@ func runForeground() {
 		logger.Log.WithError(err).Fatal("Failed to load config")
 	}
 
-	logger.Log.WithFields(map[string]interface{}{
-		"version": cfg.Version,
-		"company": config.Company,
-	}).Infof("starting %s daemon", config.AppName)
+	logger.Log.Infof("Starting %s v%s by %s", config.AppName, config.GetVersion(), config.Company)
 
 	// Initialize plugins
 	if err := plugins.InitPlugins(cfg); err != nil {
@@ -96,6 +93,10 @@ func runForeground() {
 	if err != nil {
 		logger.Log.WithError(err).Fatal("Failed to initialize watcher")
 	}
+
+	// Print system tuning info
+	workers, buffer, cpuCount, ramGB := watch.GetTuningInfo()
+	banner.PrintSystemInfo(workers, buffer, cpuCount, ramGB)
 
 	// Start watcher
 	if err := watch.Start(); err != nil {

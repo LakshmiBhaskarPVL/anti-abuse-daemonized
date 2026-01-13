@@ -107,6 +107,12 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("failed to create config directory %s: %w", configDir, err)
 	}
 
+	// Create signatures directory
+	signaturesDir := filepath.Join(configDir, "signatures")
+	if err := os.MkdirAll(signaturesDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create signatures directory %s: %w", signaturesDir, err)
+	}
+
 	// If config doesn't exist, create it with defaults
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if err := createDefaultConfig(path); err != nil {
@@ -132,6 +138,11 @@ func LoadConfig(path string) (*Config, error) {
 func createDefaultConfig(path string) error {
 	return os.WriteFile(path, []byte(DefaultConfigTemplate), 0644)
 }
+
+func GetVersion() string {
+	return "1.0.0"
+}
+
 
 func GetConfigPath() string {
 	if path := os.Getenv("SENTINEL_CONFIG"); path != "" {

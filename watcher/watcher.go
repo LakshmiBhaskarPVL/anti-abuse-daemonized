@@ -23,6 +23,7 @@ type Watcher struct {
 	config     *config.Config
 	workChan   chan FileEvent
 	workerPool int
+	bufferSize int
 	ctx        context.Context
 	cancel     context.CancelFunc
 	wg         sync.WaitGroup
@@ -51,11 +52,17 @@ func NewWatcher(cfg *config.Config, scan *scanner.Scanner) (*Watcher, error) {
 		config:     cfg,
 		workChan:   make(chan FileEvent, bufferSize),
 		workerPool: workerPool,
+		bufferSize: bufferSize,
 		ctx:        ctx,
 		cancel:     cancel,
 	}
 
 	return watch, nil
+}
+
+// GetTuningInfo returns worker pool, buffer size, CPU count, and RAM in GB
+func (w *Watcher) GetTuningInfo() (workers int, buffer int, cpuCount int, ramGB int) {
+	return w.workerPool, w.bufferSize, runtime.NumCPU(), getSystemMemoryGB()
 }
 
 func autoTuneResources() (int, int) {
@@ -80,7 +87,6 @@ func autoTuneResources() (int, int) {
 		bufferSize = 8192
 	}
 
-	logger.Log.Infof("Auto-tuned: %d workers, %d buffer size (CPU: %d, RAM: %dGB)", workerPool, bufferSize, numCPU, memGB)
 	return workerPool, bufferSize
 }
 

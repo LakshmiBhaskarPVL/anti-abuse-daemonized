@@ -10,9 +10,9 @@ var Log *logrus.Logger
 
 func init() {
 	Log = logrus.New()
-	Log.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp:   true,
+	Log.SetFormatter(&logrus.JSONFormatter{
 		TimestampFormat: "15:04",
+		DisableTimestamp: false,
 	})
 	Log.SetOutput(os.Stdout)
 	Log.SetLevel(logrus.InfoLevel)
