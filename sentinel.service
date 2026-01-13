@@ -1,0 +1,19 @@
+[Unit]
+Description=Sentinel - Advanced Abuse Detection by Novel
+Documentation=https://github.com/your-repo/sentinel
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/etc/sentinel
+ExecStart=/usr/local/bin/sentinel --daemon --config /etc/sentinel/config.toml --log-level info
+ExecStop=/usr/local/bin/sentinel --action stop
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=sentinel
+
+[Install]
+WantedBy=multi-user.target

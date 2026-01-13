@@ -1,0 +1,40 @@
+ver = "1.0.0-go"
+company = "Novel"
+app_name = "Sentinel"
+machineID = "server1"
+
+[LANGUGAE.english]
+novelStarted = "Anti-Abuse Go Started within - {}s."
+
+[LOGS]
+processStartMsg = true
+flaggedNoti = true
+fileModified = false
+fileDeleted = false
+fileMoved = false
+fileCreated = false
+
+[DETECTION]
+watchdogPath = ["/var/lib/pterodactyl/volumes"]
+SignaturePath = "./signatures"
+watchdogIgnorePath = ["./signatures"]
+watchdogIgnoreFile = ["main.go", "config.toml"]
+maxFileSizeMB = 500  # Allow up to 500MB files
+
+[INTEGRATION.AI]
+enabled = true
+generate_models = ["llama-3.3-70b-versatile", "llama-3.3-70b-specdec"]
+generate_endpoint = "http://localhost:11434/api/generate"
+use_groq = false
+groq_api_token = ""
+prompt = "Analyze the given code and return an abuse score (0-10) with a brief reason. Example abuses: Crypto Mining, Shell Access, Nezha Proxy (VPN/Proxy usage), Disk Filling, Tor, DDoS, Abusive Resource Usage. Response format: '**5/10** <your reason>'. No extra messages."
+
+[INTEGRATION.DISCORD]
+enabled = false
+webhook_url = "https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN"
+truncate_text = true
+
+[PLUGINS.PterodactylAutoSuspend]
+hostname = "https://panel.example.com"
+api_key = "ptla_"
+path = "/var/lib/pterodactyl/volumes"
