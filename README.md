@@ -32,8 +32,8 @@ Sentinel is a high-performance, minimal-overhead abuse detection system designed
 # Create config directory
 sudo mkdir -p /etc/sentinel
 
-# Download binary (auto-detects architecture)
-curl -L -o /usr/local/bin/sentinel "https://github.com/your-org/sentinel/releases/latest/download/sentinel_linux_$([[ "$(uname -m)" == "x86_64" ]] && echo "amd64" || echo "arm64")"
+# Download binary
+curl -L -o /usr/local/bin/sentinel "https://github.com/your-org/sentinel/releases/latest/download/sentinel_linux"
 sudo chmod u+x /usr/local/bin/sentinel
 
 # Verify installation

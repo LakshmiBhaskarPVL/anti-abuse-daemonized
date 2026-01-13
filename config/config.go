@@ -76,8 +76,8 @@ func LoadConfig(path string) (*Config, error) {
 }
 
 func GetConfigPath() string {
-	if path := os.Getenv("ANTI_ABUSE_CONFIG"); path != "" {
+	if path := os.Getenv("SENTINEL_CONFIG"); path != "" {
 		return path
 	}
-	return "./config.toml"
+	return "/etc/sentinel/config.toml"
 }

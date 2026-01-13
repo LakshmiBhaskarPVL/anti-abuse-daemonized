@@ -16,8 +16,8 @@ fileCreated = false
 
 [DETECTION]
 watchdogPath = ["/var/lib/pterodactyl/volumes"]
-SignaturePath = "./signatures"
-watchdogIgnorePath = ["./signatures"]
+SignaturePath = "/etc/sentinel/signatures"
+watchdogIgnorePath = ["/etc/sentinel/signatures"]
 watchdogIgnoreFile = ["main.go", "config.toml"]
 maxFileSizeMB = 500  # Allow up to 500MB files
 
