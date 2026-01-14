@@ -12,6 +12,7 @@ import (
 
 	"anti-abuse-go/logger"
 	"github.com/hillu/go-yara/v4"
+	"github.com/nwaples/rardecode"
 )
 
 // Match represents a YARA match
@@ -141,8 +142,12 @@ func (s *Scanner) Scan(data []byte, filePath string) (MatchRules, error) {
 		return nil, fmt.Errorf("scanner not initialized - no rules loaded")
 	}
 
-	if isJarFile(filePath) {
-		return s.scanJar(data)
+	if isArchiveFile(filePath) {
+		if isJarFile(filePath) {
+			return s.scanJar(data)
+		} else if isRarFile(filePath) {
+			return s.scanRar(data)
+		}
 	}
 
 	// Collect matches from all rule files
@@ -170,9 +175,19 @@ func (s *Scanner) Scan(data []byte, filePath string) (MatchRules, error) {
 	return allMatches, nil
 }
 
+func isArchiveFile(path string) bool {
+	ext := filepath.Ext(path)
+	return ext == ".jar" || ext == ".zip" || ext == ".rar"
+}
+
 func isJarFile(path string) bool {
 	ext := filepath.Ext(path)
 	return ext == ".jar" || ext == ".zip"
+}
+
+func isRarFile(path string) bool {
+	ext := filepath.Ext(path)
+	return ext == ".rar"
 }
 
 func (s *Scanner) scanJar(data []byte) (MatchRules, error) {
@@ -208,6 +223,50 @@ func (s *Scanner) scanJar(data []byte) (MatchRules, error) {
 		matches, err := s.Scan(content, file.Name)
 		if err != nil {
 			logger.Log.Warnf("Error scanning %s in JAR: %v", file.Name, err)
+			continue
+		}
+
+		allMatches = append(allMatches, matches...)
+	}
+
+	return allMatches, nil
+}
+
+func (s *Scanner) scanRar(data []byte) (MatchRules, error) {
+	reader, err := rardecode.NewReader(strings.NewReader(string(data)), "")
+	if err != nil {
+		return nil, fmt.Errorf("failed to open RAR: %w", err)
+	}
+
+	var allMatches MatchRules
+	for {
+		header, err := reader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			logger.Log.Warnf("Error reading RAR entry: %v", err)
+			continue
+		}
+
+		if header.IsDir {
+			continue
+		}
+		if header.UnpackedSize > 10*1024*1024 { // 10MB limit per file in RAR
+			logger.Log.Debugf("Skipping %s in RAR (size > 10MB)", header.Name)
+			continue
+		}
+
+		content, err := io.ReadAll(reader)
+		if err != nil {
+			logger.Log.Warnf("Failed to read %s in RAR: %v", header.Name, err)
+			continue
+		}
+
+		// Scan the extracted file content
+		matches, err := s.Scan(content, header.Name)
+		if err != nil {
+			logger.Log.Warnf("Error scanning %s in RAR: %v", header.Name, err)
 			continue
 		}
 
