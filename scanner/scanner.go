@@ -252,7 +252,7 @@ func (s *Scanner) scanRar(data []byte) (MatchRules, error) {
 		if header.IsDir {
 			continue
 		}
-		if header.UnpackedSize > 10*1024*1024 { // 10MB limit per file in RAR
+		if header.Size > 10*1024*1024 { // 10MB limit per file in RAR
 			logger.Log.Debugf("Skipping %s in RAR (size > 10MB)", header.Name)
 			continue
 		}
