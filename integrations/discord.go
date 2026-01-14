@@ -114,7 +114,7 @@ func SendDiscordWebhook(cfg *config.Config, machineID, filePath string, fields [
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 204 {
+	if resp.StatusCode != 204 && resp.StatusCode != 200 {
 		return fmt.Errorf("discord webhook failed with status: %d", resp.StatusCode)
 	}
 
