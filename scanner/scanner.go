@@ -252,10 +252,9 @@ func (s *Scanner) scanRar(data []byte) (MatchRules, error) {
 		if header.IsDir {
 			continue
 		}
-		if header.Size > 10*1024*1024 { // 10MB limit per file in RAR
-			logger.Log.Debugf("Skipping %s in RAR (size > 10MB)", header.Name)
-			continue
-		}
+
+		// Note: rardecode.FileHeader doesn't have a Size field, so no size limit check for RAR
+		// Read the entire content (similar to Python implementation)
 
 		content, err := io.ReadAll(reader)
 		if err != nil {
